@@ -127,7 +127,7 @@ class SearchTerm(db.Model):
     __tablename__ = 'searchterms'
     id = db.Column(db.Integer, primary_key=True)
     term = db.Column(db.String(32), unique=True)
-    gifs = db.relationship('Gif',secondary=tags,backref=db.backref('search',lazy='dynamic'),lazy='dynamic')
+    gifs = db.relationship('Gif', secondary=tags, backref=db.backref('search',lazy='dynamic'),lazy='dynamic')
 
     # TODO 364: Define a __repr__ method for this model class that returns the term string
     def __repr__(self):
