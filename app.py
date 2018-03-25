@@ -127,7 +127,7 @@ class SearchTerm(db.Model):
     __tablename__ = 'searchterms'
     id = db.Column(db.Integer, primary_key=True)
     term = db.Column(db.String(32), unique=True)
-    gifs = db.relationship('Gif', secondary=tags, backref=db.backref('search',lazy='dynamic'),lazy='dynamic')
+    gifs = db.relationship('Gif', secondary=tags, backref=db.backref('SearchTerm',lazy='dynamic'),lazy='dynamic')
 
     # TODO 364: Define a __repr__ method for this model class that returns the term string
     def __repr__(self):
@@ -181,10 +181,10 @@ def get_gifs_from_giphy(search_string):
     # Then the function should process the response in order to return a list of 5 gif dictionaries.
     # HINT: You'll want to use 3 parameters in the API request -- api_key, q, and limit. You may need to do a bit of nested data investigation and look for API documentation.
     # HINT 2: test out this function outside your Flask application, in a regular simple Python program, with a bunch of print statements and sample invocations, to make sure it works!
-    baseurl = "https://api.giphy.com/v1/gifs/search"
-    params = {'api_key': api_key, 'q': form.search.data, 'limit': 5}
-    search_string = json.loads(requests.get(baseurl, params=params).text)
-    return search_string['data']
+    url = "https://api.giphy.com/v1/gifs/search"
+    params = {'api_key': api_key, 'q': search_string, 'limit': 5}
+    search_results = json.loads(requests.get(url=url, params=params).text)
+    return search_results['data']
 
 # Provided
 def get_gif_by_id(id):
@@ -214,16 +214,17 @@ def get_or_create_search_term(term):
     # And the SearchTerm instance that was got or created should be returned.
     # HINT: I recommend using print statements as you work through building this function and use it in invocations in view functions to ensure it works as you expect!
     search_term = SearchTerm.query.filter_by(term=term).first()
-    gif_list = []
+
     if search_term:
         print("Term exists!")
         return search_term
     else:
         print("Term added!")
         search_term = SearchTerm(term=term)
+        gif_list = get_gifs_from_giphy(search_term)
         for g in gif_list:
-            gif = get_or_create_gif(db_session, title = g[1], url = g[2])
-            search_term.gifs.append(gif)
+            g = get_or_create_gif(g['title'], g['embed_url'])
+            search_term.gifs.append(g)
         db.session.add(search_term)
         db.session.commit()
         return search_term
